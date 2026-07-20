@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Circuit Simulator - Electrical & Electronics Lab</title>
+    <style>
+        :root {
+            --bg: #1a1d23;
+            --panel: #21252b;
+            --border: #333842;
+            --text: #d4d4d4;
+            --text2: #a0a4b0;
+            --accent: #4da6ff;
+            --accent2: #ff6b6b;
+            --accent3: #51cf66;
+            --accent4: #ffb347;
+            --terminal: #ffd700;
+            --wire: #8899aa;
+            --grid: #2a2d35;
+            --hover: #2c313a;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --radius: 8px;
+            --transition: 0.18s ease;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: var(--shadow);
+        }
+        .sidebar-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+            background: #1c1f26;
+            font-weight: 700;
+            font-size: 1.05rem;
+            letter-spacing: 0.3px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sidebar-header .icon {
+            font-size: 1.4rem;
+        }
+        .component-categories {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+        .category {
+            margin-bottom: 4px;
+        }
+        .category-title {
+            padding: 10px 18px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text2);
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: var(--transition);
+        }
+        .category-title:hover {
+            color: #fff;
+            background: var(--hover);
+        }
+        .category-title .arrow {
+            transition: transform 0.25s ease;
+            font-size: 0.6rem;
+        }
+        .category.collapsed .arrow {
+            transform: rotate(-90deg);
+        }
+        .category.collapsed .components-grid {
+            display: none;
+        }
+        .components-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            padding: 4px 12px 8px;
+        }
+        .component-card {
+            background: #282c35;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            padding: 10px 8px;
+            cursor: grab;
+            text-align: center;
+            transition: all var(--transition);
+            position: relative;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #c8ccd6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            min-height: 68px;
+            justify-content: center;
+        }
+        .component-card:hover {
+            border-color: var(--accent);
+            background: #303640;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .component-card:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+        .component-card .comp-icon {
+            font-size: 1.6rem;
+            line-height: 1;
+        }
+        .component-card .comp-label {
+            font-size: 0.68rem;
+            line-height: 1.2;
+            opacity: 0.85;
+        }
+        .sidebar-footer {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all var(--transition);
+            text-align: center;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-simulate {
+            background: var(--accent3);
+            color: #000;
+            border-color: var(--accent3);
+            font-weight: 700;
+        }
+        .btn-simulate:hover {
+            filter: brightness(1.15);
+            box-shadow: 0 4px 16px rgba(81, 207, 102, 0.3);
+        }
+        .btn-clear {
+            background: transparent;
+            color: var(--accent2);
+            border-color: #5a3030;
+        }
+        .btn-clear:hover {
+            background: #3a2020;
+            border-color: var(--accent2);
+        }
+        .btn-reset {
+            background: transparent;
+            color: var(--text2);
+            border-color: var(--border);
+        }
+        .btn-reset:hover {
+            background: var(--hover);
+            color: #fff;
+        }
+
+        /* MAIN */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 10px 16px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            flex-wrap: wrap;
+            z-index: 5;
+        }
+        .toolbar .tool-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding: 0 8px;
+            border-right: 1px solid var(--border);
+        }
+        .toolbar .tool-group:last-child {
+            border-right: none;
+        }
+        .tool-btn {
+            padding: 7px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text2);
+            font-size: 0.78rem;
+            transition: var(--transition);
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .tool-btn:hover {
+            background: var(--hover);
+            color: #fff;
+            border-color: var(--border);
+        }
+        .tool-btn.active {
+            background: #2a3a50;
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+            background: #181b21;
+        }
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .status-bar {
+            padding: 8px 16px;
+            background: var(--panel);
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            z-index: 5;
+        }
+        .status-bar .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot.green {
+            background: var(--accent3);
+            box-shadow: 0 0 8px rgba(81, 207, 102, 0.6);
+        }
+        .dot.yellow {
+            background: var(--accent4);
+            box-shadow: 0 0 8px rgba(255, 179, 71, 0.6);
+        }
+        .info-panel {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            font-size: 0.78rem;
+            z-index: 20;
+            box-shadow: var(--shadow);
+            max-width: 240px;
+            display: none;
+            pointer-events: none;
+        }
+        .info-panel.visible {
+            display: block;
+        }
+        .info-panel h4 {
+            margin-bottom: 6px;
+            color: var(--accent);
+            font-size: 0.85rem;
+        }
+        .info-panel .info-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 3px 0;
+            color: var(--text2);
+        }
+        .info-panel .info-val {
+            color: #fff;
+            font-weight: 600;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+                min-width: 200px;
+            }
+            .components-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <span class="icon">⚡</span> Components
+        </div>
+        <div class="component-categories" id="componentCategories">
+            <!-- Populated by JS -->
+        </div>
+        <div class="sidebar-footer">
+            <button class="btn btn-simulate" onclick="runSimulation()" title="Run DC Circuit Analysis">🔬 Run Simulation</button>
+            <button class="btn btn-clear" onclick="clearAll()">🗑 Clear Canvas</button>
+            <button class="btn btn-reset" onclick="resetSimulation()">↺ Reset Results</button>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main-area">
+        <div class="toolbar">
+            <div class="tool-group">
+                <span style="color:var(--text2);font-size:0.75rem;margin-right:4px;">Mode:</span>
+                <button class="tool-btn active" id="modeSelect" onclick="setMode('select')">🖱 Select</button>
+                <button class="tool-btn" id="modeWire" onclick="setMode('wire')">🔗 Wire</button>
+                <button class="tool-btn" id="modeDelete" onclick="setMode('delete')">✂ Delete</button>
+            </div>
+            <div class="tool-group">
+                <button class="tool-btn" onclick="rotateSelected()">↻ Rotate</button>
+                <button class="tool-btn" onclick="duplicateSelected()">⧉ Duplicate</button>
+            </div>
+            <div class="tool-group">
+                <span style="color:var(--text2);font-size:0.75rem;">Grid:</span>
+                <button class="tool-btn active" id="gridOn" onclick="toggleGrid()">📐 ON</button>
+            </div>
+            <span style="color:var(--text2);font-size:0.7rem;margin-left:auto;">Right-click component for options</span>
+        </div>
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="mainCanvas"></canvas>
+            <div class="info-panel" id="infoPanel">
+                <h4 id="infoTitle">Component Info</h4>
+                <div id="infoContent"></div>
+            </div>
+        </div>
+        <div class="status-bar">
+            <span class="status-indicator">
+                <span class="dot green" id="statusDot"></span>
+                <span id="statusText">Ready - Drag components onto the canvas</span>
+            </span>
+            <span>Components: <strong id="compCount">0</strong> | Wires: <strong id="wireCount">0</strong> | Nodes: <strong id="nodeCount">0</strong></span>
+            <span id="simResult" style="color:var(--accent3);"></span>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CIRCUIT SIMULATOR ENGINE ====================
+
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('canvasContainer');
+        const infoPanel = document.getElementById('infoPanel');
+        const infoTitle = document.getElementById('infoTitle');
+        const infoContent = document.getElementById('infoContent');
+
+        let W, H;
+        let gridSize = 20;
+        let showGrid = true;
+        let currentMode = 'select'; // 'select' | 'wire' | 'delete'
+        let scale = 1;
+        let offsetX = 0,
+            offsetY = 0;
+
+        // Data
+        let components = [];
+        let wires = [];
+        let selectedCompId = null;
+        let wireStart = null; // {compId, termIdx}
+        let dragData = null;
+        let hoveredTerminal = null;
+        let simulationResults = null; // {nodeVoltages: Map, branchCurrents: Map}
+        let nextId = 1;
+        let mouseX = 0,
+            mouseY = 0;
+        let isPanning = false;
+        let panStart = { x: 0, y: 0 };
+
+        // ==================== COMPONENT DEFINITIONS ====================
+        const componentDefs = {
+            resistor: {
+                name: 'Resistor',
+                icon: '⊿',
+                category: 'passive',
+                terminals: [{ dx: -28, dy: 0 }, { dx: 28, dy: 0 }],
+                width: 56,
+                height: 28,
+                color: '#e8a87c',
+                props: { resistance: 1000, unit: 'Ω' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    const pts = zigzagPoints(cx, cy, 50, 8, 4, rot);
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    drawLabel(cx, cy, props.resistance + ' ' + props.unit, this.color);
+                }
+            },
+            capacitor: {
+                name: 'Capacitor',
+                icon: '⫙',
+                category: 'passive',
+                terminals: [{ dx: -26, dy: 0 }, { dx: 26, dy: 0 }],
+                width: 52,
+                height: 34,
+                color: '#7eb8da',
+                props: { capacitance: 100, unit: 'µF' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const t1 = rotatePoint(cx - 26, cy, cx, cy, rot);
+                    const t2 = rotatePoint(cx + 26, cy, cx, cy, rot);
+                    const gap = 10;
+                    const mid = { x: (t1.x + t2.x) / 2, y: (t1.y + t2.y) / 2 };
+                    const dir = normalize(t2.x - t1.x, t2.y - t1.y);
+                    const perp = { x: -dir.y, y: dir.x };
+                    const p1a = { x: mid.x - dir.x * gap / 2 + perp.x * 14, y: mid.y - dir.y * gap / 2 + perp.y *
+                            14 };
+                    const p1b = { x: mid.x - dir.x * gap / 2 - perp.x * 14, y: mid.y - dir.y * gap / 2 - perp.y *
+                            14 };
+                    const p2a = { x: mid.x + dir.x * gap / 2 + perp.x * 14, y: mid.y + dir.y * gap / 2 + perp.y *
+                            14 };
+                    const p2b = { x: mid.x + dir.x * gap / 2 - perp.x * 14, y: mid.y + dir.y * gap / 2 - perp.y *
+                            14 };
+                    ctx.beginPath();
+                    ctx.moveTo(t1.x, t1.y);
+                    ctx.lineTo(p1a.x, p1a.y);
+                    ctx.moveTo(p1b.x, p1b.y);
+                    ctx.lineTo(p2a.x, p2a.y);
+                    ctx.moveTo(p2b.x, p2b.y);
+                    ctx.lineTo(t2.x, t2.y);
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    drawLabel(cx, cy + 18, props.capacitance + ' ' + props.unit, this.color);
+                }
+            },
+            inductor: {
+                name: 'Inductor',
+                icon: '⏦',
+                category: 'passive',
+                terminals: [{ dx: -28, dy: 0 }, { dx: 28, dy: 0 }],
+                width: 56,
+                height: 28,
+                color: '#b8d98a',
+                props: { inductance: 10, unit: 'mH' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    const coils = 5;
+                    const totalW = 44;
+                    const amplitude = 10;
+                    const pts = [];
+                    for (let i = 0; i <= coils * 8; i++) {
+                        const frac = i / (coils * 8);
+                        const px = cx - totalW / 2 + frac * totalW;
+                        const py = cy + Math.sin(frac * coils * Math.PI * 2) * amplitude;
+                        const rp = rotatePoint(px, py, cx, cy, rot);
+                        pts.push(rp);
+                    }
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                    ctx.stroke();
+                    const t1 = rotatePoint(cx - 30, cy, cx, cy, rot);
+                    const t2 = rotatePoint(cx + 30, cy, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(t1.x, t1.y);
+                    ctx.lineTo(pts[0].x, pts[0].y);
+                    ctx.moveTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+                    ctx.lineTo(t2.x, t2.y);
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    drawLabel(cx, cy + 18, props.inductance + ' ' + props.unit, this.color);
+                }
+            },
+            dc_voltage: {
+                name: 'DC Voltage',
+                icon: '🔋',
+                category: 'sources',
+                terminals: [{ dx: -24, dy: 0 }, { dx: 24, dy: 0 }],
+                width: 48,
+                height: 36,
+                color: '#ff6b6b',
+                props: { voltage: 5, unit: 'V' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const r = 14;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.stroke();
+                    const t1 = rotatePoint(cx - r, cy, cx, cy, rot);
+                    const t2 = rotatePoint(cx + r, cy, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(t1.x, t1.y);
+                    ctx.lineTo(cx - r * Math.cos(rot) * 1.7, cy - r * Math.sin(rot) * 1.7);
+                    ctx.moveTo(t2.x, t2.y);
+                    ctx.lineTo(cx + r * Math.cos(rot) * 1.7, cy + r * Math.sin(rot) * 1.7);
+                    ctx.stroke();
+                    ctx.fillStyle = this.color;
+                    ctx.font = 'bold 11px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('+' + props.voltage + 'V', cx, cy - 16);
+                    ctx.fillText('−', cx, cy + 6);
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+            ground: {
+                name: 'Ground',
+                icon: '⏚',
+                category: 'sources',
+                terminals: [{ dx: 0, dy: -10 }],
+                width: 30,
+                height: 30,
+                color: '#999',
+                props: {},
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const t = rotatePoint(cx, cy - 10, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(t.x, t.y);
+                    ctx.lineTo(cx, cy + 2);
+                    ctx.lineTo(cx - 14, cy + 14);
+                    ctx.lineTo(cx + 14, cy + 14);
+                    ctx.lineTo(cx, cy + 2);
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    ctx.fillStyle = this.color;
+                    ctx.font = '9px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('GND', cx, cy + 24);
+                }
+            },
+            diode: {
+                name: 'Diode',
+                icon: '▷|',
+                category: 'semiconductor',
+                terminals: [{ dx: -26, dy: 0 }, { dx: 26, dy: 0 }],
+                width: 52,
+                height: 24,
+                color: '#c0a0e0',
+                props: { type: 'silicon' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const t1 = rotatePoint(cx - 26, cy, cx, cy, rot);
+                    const t2 = rotatePoint(cx + 26, cy, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(t1.x, t1.y);
+                    ctx.lineTo(cx - 8 * Math.cos(rot), cy - 8 * Math.sin(rot));
+                    const triPts = [
+                        rotatePoint(cx - 8, cy - 12, cx, cy, rot),
+                        rotatePoint(cx + 10, cy, cx, cy, rot),
+                        rotatePoint(cx - 8, cy + 12, cx, cy, rot),
+                    ];
+                    ctx.moveTo(triPts[0].x, triPts[0].y);
+                    ctx.lineTo(triPts[1].x, triPts[1].y);
+                    ctx.lineTo(triPts[2].x, triPts[2].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                    const barC = rotatePoint(cx + 12, cy, cx, cy, rot);
+                    const barP = rotatePoint(cx + 12, cy - 12, cx, cy, rot);
+                    const barP2 = rotatePoint(cx + 12, cy + 12, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(barP.x, barP.y);
+                    ctx.lineTo(barP2.x, barP2.y);
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(barC.x, barC.y);
+                    ctx.lineTo(t2.x, t2.y);
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    drawLabel(cx, cy + 18, 'Diode', this.color);
+                }
+            },
+            led: {
+                name: 'LED',
+                icon: '💡',
+                category: 'semiconductor',
+                terminals: [{ dx: -24, dy: 0 }, { dx: 24, dy: 0 }],
+                width: 48,
+                height: 28,
+                color: '#ff5555',
+                props: { color: 'red', vf: 2.0 },
+                draw: function(cx, cy, rot, props) {
+                    const isOn = simulationResults && getCompCurrent(
+                        findCompIdxById.bind(this)) > 0.001;
+                    ctx.strokeStyle = isOn ? '#ff3333' : this.color;
+                    ctx.lineWidth = 2.5;
+                    const t1 = rotatePoint(cx - 24, cy, cx, cy, rot);
+                    const t2 = rotatePoint(cx + 24, cy, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(t1.x, t1.y);
+                    ctx.lineTo(cx - 6 * Math.cos(rot), cy - 6 * Math.sin(rot));
+                    const triPts = [
+                        rotatePoint(cx - 6, cy - 11, cx, cy, rot),
+                        rotatePoint(cx + 10, cy, cx, cy, rot),
+                        rotatePoint(cx - 6, cy + 11, cx, cy, rot),
+                    ];
+                    ctx.moveTo(triPts[0].x, triPts[0].y);
+                    ctx.lineTo(triPts[1].x, triPts[1].y);
+                    ctx.lineTo(triPts[2].x, triPts[2].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                    if (isOn) {
+                        ctx.fillStyle = 'rgba(255,80,80,0.5)';
+                        ctx.fill();
+                        // Glow
+                        ctx.fillStyle = 'rgba(255,200,100,0.35)';
+                        ctx.beginPath();
+                        ctx.arc(cx, cy - 2, 16, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    const barC = rotatePoint(cx + 12, cy, cx, cy, rot);
+                    const barP = rotatePoint(cx + 12, cy - 10, cx, cy, rot);
+                    const barP2 = rotatePoint(cx + 12, cy + 10, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(barP.x, barP.y);
+                    ctx.lineTo(barP2.x, barP2.y);
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(barC.x, barC.y);
+                    ctx.lineTo(t2.x, t2.y);
+                    ctx.stroke();
+                    // Arrow indicators
+                    const arr1 = rotatePoint(cx - 8, cy - 15, cx, cy, rot);
+                    const arr2 = rotatePoint(cx - 12, cy - 11, cx, cy, rot);
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.beginPath();
+                    ctx.moveTo(arr1.x, arr1.y);
+                    ctx.lineTo(arr2.x, arr2.y);
+                    ctx.lineTo(arr1.x - 4 * Math.cos(rot), arr1.y - 4 * Math.sin(rot));
+                    ctx.fill();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+            switch_spst: {
+                name: 'Switch SPST',
+                icon: '⏻',
+                category: 'switches',
+                terminals: [{ dx: -24, dy: 0 }, { dx: 24, dy: 0 }],
+                width: 48,
+                height: 28,
+                color: '#ddd',
+                props: { state: 'open' },
+                draw: function(cx, cy, rot, props) {
+                    const isClosed = props.state === 'closed';
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth: 2.5;
+                    const t1 = rotatePoint(cx - 24, cy, cx, cy, rot);
+                    const t2 = rotatePoint(cx + 24, cy, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(t1.x, t1.y);
+                    ctx.lineTo(cx - 6 * Math.cos(rot), cy - 6 * Math.sin(rot));
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(cx + 6 * Math.cos(rot), cy + 6 * Math.sin(rot));
+                    ctx.lineTo(t2.x, t2.y);
+                    ctx.stroke();
+                    const pivot = rotatePoint(cx - 6, cy, cx, cy, rot);
+                    const endPt = rotatePoint(cx + 6, cy + (isClosed ? 0 : -14), cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(pivot.x, pivot.y);
+                    ctx.lineTo(endPt.x, endPt.y);
+                    ctx.strokeStyle = isClosed ? '#51cf66' : '#ddd';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(pivot.x, pivot.y, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    drawLabel(cx, cy + 16, isClosed ? 'ON' : 'OFF', isClosed ? '#51cf66' : '#999');
+                }
+            },
+            npn_transistor: {
+                name: 'NPN Transistor',
+                icon: '🔺',
+                category: 'semiconductor',
+                terminals: [{ dx: 0, dy: -22 }, { dx: -20, dy: 16 }, { dx: 20, dy: 16 }],
+                width: 44,
+                height: 44,
+                color: '#d4a0a0',
+                props: { beta: 100 },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const tC = rotatePoint(cx, cy - 22, cx, cy, rot);
+                    const tB = rotatePoint(cx - 20, cy + 16, cx, cy, rot);
+                    const tE = rotatePoint(cx + 20, cy + 16, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(tC.x, tC.y);
+                    ctx.lineTo(cx, cy - 4);
+                    ctx.lineTo(tB.x, tB.y);
+                    ctx.moveTo(cx, cy - 4);
+                    ctx.lineTo(tE.x, tE.y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = '#282c35';
+                    ctx.fill();
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    ctx.fillStyle = this.color;
+                    ctx.font = '8px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('C', tC.x + 8 * Math.cos(rot), tC.y + 8 * Math.sin(rot) - 4);
+                    ctx.fillText('B', tB.x - 8, tB.y + 4);
+                    ctx.fillText('E', tE.x + 8, tE.y + 4);
+                }
+            },
+            pnp_transistor: {
+                name: 'PNP Transistor',
+                icon: '🔻',
+                category: 'semiconductor',
+                terminals: [{ dx: 0, dy: -22 }, { dx: -20, dy: 16 }, { dx: 20, dy: 16 }],
+                width: 44,
+                height: 44,
+                color: '#a0c4d4',
+                props: { beta: 100 },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const tC = rotatePoint(cx, cy - 22, cx, cy, rot);
+                    const tB = rotatePoint(cx - 20, cy + 16, cx, cy, rot);
+                    const tE = rotatePoint(cx + 20, cy + 16, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(tC.x, tC.y);
+                    ctx.lineTo(cx, cy - 4);
+                    ctx.lineTo(tB.x, tB.y);
+                    ctx.moveTo(cx, cy - 4);
+                    ctx.lineTo(tE.x, tE.y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = '#282c35';
+                    ctx.fill();
+                    ctx.stroke();
+                    const arrPt = rotatePoint(cx - 8, cy + 14, cx, cy, rot);
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.moveTo(arrPt.x, arrPt.y);
+                    ctx.lineTo(arrPt.x - 6, arrPt.y + 6);
+                    ctx.lineTo(arrPt.x + 6, arrPt.y + 6);
+                    ctx.fill();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    ctx.fillStyle = this.color;
+                    ctx.font = '8px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('C', tC.x + 8 * Math.cos(rot), tC.y + 8 * Math.sin(rot) - 4);
+                    ctx.fillText('B', tB.x - 8, tB.y + 4);
+                    ctx.fillText('E', tE.x + 8, tE.y + 4);
+                }
+            },
+            opamp: {
+                name: 'Op-Amp',
+                icon: '▷∞',
+                category: 'ic',
+                terminals: [
+                    { dx: -18, dy: -18 }, { dx: -18, dy: 18 }, { dx: 22, dy: 0 },
+                    { dx: 0, dy: -22 }, { dx: 0, dy: 22 }
+                ],
+                width: 48,
+                height: 48,
+                color: '#aab8c8',
+                props: { gain: 100000 },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const triPts = [
+                        rotatePoint(cx - 18, cy - 20, cx, cy, rot),
+                        rotatePoint(cx - 18, cy + 20, cx, cy, rot),
+                        rotatePoint(cx + 14, cy, cx, cy, rot),
+                    ];
+                    ctx.beginPath();
+                    ctx.moveTo(triPts[0].x, triPts[0].y);
+                    ctx.lineTo(triPts[1].x, triPts[1].y);
+                    ctx.lineTo(triPts[2].x, triPts[2].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.fillStyle = '#1c2028';
+                    ctx.fill();
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    ctx.fillStyle = this.color;
+                    ctx.font = '8px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    const labels = ['−', '+', 'out', 'V+', 'V−'];
+                    this.terminals.forEach((t, i) => {
+                        const tp = rotatePoint(cx + t.dx, cy + t.dy, cx, cy, rot);
+                        ctx.fillText(labels[i], tp.x + 7 * Math.cos(rot), tp.y + 7 * Math.sin(rot));
+                    });
+                }
+            },
+            ammeter: {
+                name: 'Ammeter',
+                icon: 'Ⓐ',
+                category: 'meters',
+                terminals: [{ dx: -22, dy: 0 }, { dx: 22, dy: 0 }],
+                width: 44,
+                height: 28,
+                color: '#f0c060',
+                props: {},
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 13px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('A', cx, cy);
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+            voltmeter: {
+                name: 'Voltmeter',
+                icon: 'Ⓥ',
+                category: 'meters',
+                terminals: [{ dx: -22, dy: 0 }, { dx: 22, dy: 0 }],
+                width: 44,
+                height: 28,
+                color: '#60c0f0',
+                props: {},
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 13px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('V', cx, cy);
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+            fuse: {
+                name: 'Fuse',
+                icon: '🔌',
+                category: 'passive',
+                terminals: [{ dx: -24, dy: 0 }, { dx: 24, dy: 0 }],
+                width: 48,
+                height: 20,
+                color: '#ccc',
+                props: { rating: 1, unit: 'A' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const t1 = rotatePoint(cx - 24, cy, cx, cy, rot);
+                    const t2 = rotatePoint(cx + 24, cy, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(t1.x, t1.y);
+                    ctx.lineTo(cx - 6 * Math.cos(rot), cy - 6 * Math.sin(rot));
+                    ctx.lineTo(cx + 6 * Math.cos(rot), cy + 6 * Math.sin(rot));
+                    ctx.lineTo(t2.x, t2.y);
+                    ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+            bulb: {
+                name: 'Bulb/Lamp',
+                icon: '💡',
+                category: 'output',
+                terminals: [{ dx: -20, dy: 0 }, { dx: 20, dy: 0 }],
+                width: 40,
+                height: 32,
+                color: '#ffe08a',
+                props: { wattage: 5 },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy - 4, 14, Math.PI, 0);
+                    ctx.lineTo(cx + 14, cy + 8);
+                    ctx.quadraticCurveTo(cx, cy + 18, cx - 14, cy + 8);
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.fillStyle = 'rgba(255,224,138,0.2)';
+                    ctx.fill();
+                    drawTerminals(cx, cy + 8, this.terminals, rot);
+                }
+            },
+            motor_dc: {
+                name: 'DC Motor',
+                icon: '⚙',
+                category: 'output',
+                terminals: [{ dx: -22, dy: 0 }, { dx: 22, dy: 0 }],
+                width: 44,
+                height: 28,
+                color: '#8ab8d8',
+                props: { rpm: 3000 },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 10px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('M', cx, cy);
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+            buzzer: {
+                name: 'Buzzer',
+                icon: '🔔',
+                category: 'output',
+                terminals: [{ dx: -20, dy: 0 }, { dx: 20, dy: 0 }],
+                width: 40,
+                height: 28,
+                color: '#e0b0d0',
+                props: { freq: 1000, unit: 'Hz' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth: 2.5;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy - 2, 13, Math.PI * 0.7, Math.PI * 2.3);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(cx - 8, cy + 4);
+                    ctx.lineTo(cx - 3, cy + 4);
+                    ctx.lineTo(cx, cy + 10);
+                    ctx.lineTo(cx + 3, cy + 4);
+                    ctx.lineTo(cx + 8, cy + 4);
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+            potentiometer: {
+                name: 'Potentiometer',
+                icon: '🎚',
+                category: 'passive',
+                terminals: [{ dx: -24, dy: -10 }, { dx: 24, dy: -10 }, { dx: 0, dy: 18 }],
+                width: 48,
+                height: 36,
+                color: '#e8a87c',
+                props: { resistance: 10000, unit: 'Ω', wiper: 50 },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth: 2.5;
+                    const pts = zigzagPoints(cx, cy - 10, 40, 6, 3, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                    ctx.stroke();
+                    const arrowEnd = rotatePoint(cx, cy + 16, cx, cy, rot);
+                    const arrowStart = rotatePoint(cx, cy - 4, cx, cy, rot);
+                    ctx.beginPath();
+                    ctx.moveTo(arrowStart.x, arrowStart.y);
+                    ctx.lineTo(arrowEnd.x, arrowEnd.y);
+                    ctx.strokeStyle = '#ffaa00';
+                    ctx.stroke();
+                    ctx.fillStyle = '#ffaa00';
+                    ctx.beginPath();
+                    ctx.arc(arrowEnd.x, arrowEnd.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    drawLabel(cx, cy + 26, props.resistance / 1000 + 'k' + props.unit, this.color);
+                }
+            },
+            transformer: {
+                name: 'Transformer',
+                icon: '⏟⏟',
+                category: 'passive',
+                terminals: [{ dx: -26, dy: -16 }, { dx: 26, dy: -16 }, { dx: -26, dy: 16 }, { dx: 26, dy: 16 }],
+                width: 52,
+                height: 40,
+                color: '#c8b8e0',
+                props: { ratio: '10:1' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const coils = 3;
+                    for (let s = -1; s <= 1; s += 2) {
+                        const cy2 = cy + s * 12;
+                        const pts = [];
+                        for (let i = 0; i <= coils * 6; i++) {
+                            const frac = i / (coils * 6);
+                            const px = cx - 22 + frac * 44;
+                            const py = cy2 + Math.sin(frac * coils * Math.PI * 2) * 8;
+                            pts.push(rotatePoint(px, py, cx, cy, rot));
+                        }
+                        ctx.beginPath();
+                        ctx.moveTo(pts[0].x, pts[0].y);
+                        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                        ctx.stroke();
+                    }
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    ctx.fillStyle = this.color;
+                    ctx.font = '9px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(props.ratio, cx, cy + 28);
+                }
+            },
+            and_gate: {
+                name: 'AND Gate',
+                icon: '&',
+                category: 'logic',
+                terminals: [{ dx: -20, dy: -10 }, { dx: -20, dy: 10 }, { dx: 22, dy: 0 }],
+                width: 44,
+                height: 32,
+                color: '#7ec8e0',
+                props: {},
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth: 2.5;
+                    const pts = [
+                        rotatePoint(cx - 14, cy - 16, cx, cy, rot),
+                        rotatePoint(cx - 14, cy + 16, cx, cy, rot),
+                        rotatePoint(cx + 8, cy + 16, cx, cy, rot),
+                        rotatePoint(cx + 16, cy, cx, cy, rot),
+                        rotatePoint(cx + 8, cy - 16, cx, cy, rot),
+                    ];
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.fillStyle = '#1c2028';
+                    ctx.fill();
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 10px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('&', cx, cy);
+                }
+            },
+            or_gate: {
+                name: 'OR Gate',
+                icon: '≥1',
+                category: 'logic',
+                terminals: [{ dx: -20, dy: -10 }, { dx: -20, dy: 10 }, { dx: 22, dy: 0 }],
+                width: 44,
+                height: 32,
+                color: '#7ee0a0',
+                props: {},
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const pts = [
+                        rotatePoint(cx - 14, cy - 16, cx, cy, rot),
+                        rotatePoint(cx - 6, cy - 16, cx, cy, rot),
+                        rotatePoint(cx + 8, cy - 10, cx, cy, rot),
+                        rotatePoint(cx + 16, cy, cx, cy, rot),
+                        rotatePoint(cx + 8, cy + 10, cx, cy, rot),
+                        rotatePoint(cx - 6, cy + 16, cx, cy, rot),
+                        rotatePoint(cx - 14, cy + 16, cx, cy, rot),
+                    ];
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                    ctx.stroke();
+                    ctx.fillStyle = '#1c2028';
+                    ctx.fill();
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 10px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('≥1', cx, cy);
+                }
+            },
+            not_gate: {
+                name: 'NOT Gate',
+                icon: '1',
+                category: 'logic',
+                terminals: [{ dx: -18, dy: 0 }, { dx: 22, dy: 0 }],
+                width: 40,
+                height: 28,
+                color: '#e0a0a0',
+                props: {},
+                draw: function(cx, cy, rot, props) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2.5;
+                    const pts = [
+                        rotatePoint(cx - 12, cy - 14, cx, cy, rot),
+                        rotatePoint(cx - 12, cy + 14, cx, cy, rot),
+                        rotatePoint(cx + 8, cy, cx, cy, rot),
+                    ];
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    ctx.lineTo(pts[1].x, pts[1].y);
+                    ctx.lineTo(pts[2].x, pts[2].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                    ctx.fillStyle = '#1c2028';
+                    ctx.fill();
+                    ctx.stroke();
+                    const dotC = rotatePoint(cx + 12, cy, cx, cy, rot);
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(dotC.x, dotC.y, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 10px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('1', cx - 2, cy);
+                }
+            },
+            battery_9v: {
+                name: 'Battery 9V',
+                icon: '🔋',
+                category: 'sources',
+                terminals: [{ dx: -20, dy: 0 }, { dx: 20, dy: 0 }],
+                width: 40,
+                height: 32,
+                color: '#ff8c42',
+                props: { voltage: 9, unit: 'V' },
+                draw: function(cx, cy, rot, props) {
+                    ctx.fillStyle = '#3a3028';
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth: 2.5;
+                    ctx.beginPath();
+                    ctx.roundRect(cx - 16, cy - 12, 32, 24, 4);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = '#ff8c42';
+                    ctx.beginPath();
+                    ctx.roundRect(cx - 4, cy - 16, 8, 5, 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 11px "Segoe UI"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('9V', cx, cy + 4);
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+            wire_node: {
+                name: 'Wire Node',
+                icon: '●',
+                category: 'connectors',
+                terminals: [{ dx: 0, dy: 0 }],
+                width: 14,
+                height: 14,
+                color: '#ffd700',
+                props: {},
+                draw: function(cx, cy, rot, props) {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#cc9900';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    drawTerminals(cx, cy, this.terminals, rot);
+                }
+            },
+        };
+
+        // Helper drawing functions
+        function zigzagPoints(cx, cy, totalW, amplitude, segments, rot) {
+            const pts = [];
+            const halfSeg = segments / 2;
+            for (let i = 0; i <= segments; i++) {
+                const frac = i / segments;
+                const px = cx - totalW / 2 + frac * totalW;
+                const py = cy + (i % 2 === 0 ? -amplitude : amplitude);
+                pts.push(rotatePoint(px, py, cx, cy, rot));
+            }
+            return pts;
+        }
+
+        function drawTerminals(cx, cy, terminals, rot) {
+            terminals.forEach(t => {
+                const tp = rotatePoint(cx + t.dx, cy + t.dy, cx, cy, rot);
+                const isHovered = hoveredTerminal && hoveredTerminal.cx === cx && hoveredTerminal.cy === cy &&
+                    hoveredTerminal.tdx === t.dx && hoveredTerminal.tdy === t.dy;
+                ctx.fillStyle = isHovered ? '#fff' : '#ffd700';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(tp.x, tp.y, isHovered ? 6 : 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                if (isHovered) {
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(tp.x, tp.y, 8, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            });
+        }
+
+        function drawLabel(cx, cy, text, color) {
+            ctx.fillStyle = color;
+            ctx.font = '10px "Segoe UI"';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, cx, cy);
+        }
+
+        function rotatePoint(px, py, cx, cy, angle) {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
+            const dx = px - cx;
+            const dy = py - cy;
+            return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+        }
+
+        function normalize(x, y) {
+            const len = Math.sqrt(x * x + y * y);
+            return len === 0 ? { x: 0, y: 0 } : { x: x / len, y: y / len };
+        }
+
+        // ==================== PLACED COMPONENT ====================
+        class PlacedComponent {
+            constructor(typeKey, x, y, rotation = 0) {
+                this.id = nextId++;
+                this.typeKey = typeKey;
+                this.def = componentDefs[typeKey];
+                this.x = x;
+                this.y = y;
+                this.rotation = rotation;
+                this.props = { ...this.def.props };
+            }
+            getTerminalWorldPos(termIdx) {
+                const t = this.def.terminals[termIdx];
+                return rotatePoint(this.x + t.dx, this.y + t.dy, this.x, this.y, this.rotation);
+            }
+            draw(highlighted = false) {
+                ctx.save();
+                if (highlighted) {
+                    ctx.shadowColor = '#4da6ff';
+                    ctx.shadowBlur = 16;
+                }
+                if (this.id === selectedCompId) {
+                    ctx.strokeStyle = '#4da6ff';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 3]);
+                    const r = Math.max(this.def.width, this.def.height) / 2 + 10;
+                    ctx.beginPath();
+                    ctx.roundRect(this.x - r, this.y - r, r * 2, r * 2, 8);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                this.def.draw(this.x, this.y, this.rotation, this.props);
+                ctx.restore();
+            }
+            containsPoint(px, py) {
+                const r = Math.max(this.def.width, this.def.height) / 2 + 6;
+                const dx = px - this.x;
+                const dy = py - this.y;
+                return Math.sqrt(dx * dx + dy * dy) < r;
+            }
+            getTerminalAt(px, py, threshold = 9) {
+                for (let i = 0; i < this.def.terminals.length; i++) {
+                    const tp = this.getTerminalWorldPos(i);
+                    const dx = px - tp.x;
+                    const dy = py - tp.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < threshold) return i;
+                }
+                return -1;
+            }
+        }
+
+        // ==================== WIRE ====================
+        class Wire {
+            constructor(compId1, termIdx1, compId2, termIdx2) {
+                this.id = nextId++;
+                this.compId1 = compId1;
+                this.termIdx1 = termIdx1;
+                this.compId2 = compId2;
+                this.termIdx2 = termIdx2;
+            }
+            getEndpoints() {
+                const c1 = components.find(c => c.id === this.compId1);
+                const c2 = components.find(c => c.id === this.compId2);
+                if (!c1 || !c2) return null;
+                return {
+                    p1: c1.getTerminalWorldPos(this.termIdx1),
+                    p2: c2.getTerminalWorldPos(this.termIdx2),
+                };
+            }
+            draw() {
+                const eps = this.getEndpoints();
+                if (!eps) return;
+                const voltage = simulationResults ? getWireVoltage(this) : null;
+                const color = voltage !== null ? voltageColor(voltage) : '#8899aa';
+                ctx.strokeStyle = color;
+                ctx.lineWidth = voltage !== null ? 3 : 2.5;
+                ctx.shadowColor = voltage !== null ? color : 'transparent';
+                ctx.shadowBlur = voltage !== null ? 6 : 0;
+                ctx.beginPath();
+                ctx.moveTo(eps.p1.x, eps.p1.y);
+                // Simple orthogonal routing
+                const midX = (eps.p1.x + eps.p2.x) / 2;
+                ctx.lineTo(midX, eps.p1.y);
+                ctx.lineTo(midX, eps.p2.y);
+                ctx.lineTo(eps.p2.x, eps.p2.y);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                // Draw dots at connection points
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(eps.p1.x, eps.p1.y, 3, 0, Math.PI * 2);
+                ctx.arc(eps.p2.x, eps.p2.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function voltageColor(v) {
+            if (Math.abs(v) < 0.01) return '#888';
+            if (v > 0) {
+                const intensity = Math.min(1, v / 12);
+                return `rgb(${Math.floor(200+55*intensity)},${Math.floor(50+30*(1-intensity))},${Math.floor(50+30*(1-intensity))})`;
+            } else {
+                const intensity = Math.min(1, Math.abs(v) / 12);
+                return `rgb(${Math.floor(50+30*(1-intensity))},${Math.floor(50+30*(1-intensity))},${Math.floor(200+55*intensity)})`;
+            }
+        }
+
+        // ==================== FIND HELPERS ====================
+        function findCompById(id) { return components.find(c => c.id === id); }
+
+        function findCompIdxById(id) { return components.findIndex(c => c.id === id); }
+
+        function findWireById(id) { return wires.find(w => w.id === id); }
+
+        function getWireVoltage(wire) {
+            if (!simulationResults) return null;
+            const c1 = findCompById(wire.compId1);
+            const c2 = findCompById(wire.compId2);
+            if (!c1 || !c2) return null;
+            const nodeVoltages = simulationResults.nodeVoltages;
+            const nodeMap = simulationResults.nodeMap;
+            const key1 = `${wire.compId1}:${wire.termIdx1}`;
+            const key2 = `${wire.compId2}:${wire.termIdx2}`;
+            const n1 = nodeMap.get(key1);
+            const n2 = nodeMap.get(key2);
+            if (n1 === undefined || n2 === undefined) return null;
+            const v1 = nodeVoltages.get(n1) || 0;
+            const v2 = nodeVoltages.get(n2) || 0;
+            return (v1 + v2) / 2;
+        }
+
+        function getCompCurrent(compIdx) {
+            if (!simulationResults || compIdx < 0) return 0;
+            const comp = components[compIdx];
+            const bc = simulationResults.branchCurrents;
+            return bc.get(comp.id) || 0;
+        }
+
+        // ==================== CIRCUIT SOLVER ====================
+        function buildAndSolve() {
+            if (components.length === 0) return null;
+            // Build node equivalence using union-find
+            const termKeys = []; // [{key: 'compId:termIdx', compId, termIdx}]
+            const keyToIdx = new Map();
+            components.forEach(comp => {
+                comp.def.terminals.forEach((t, i) => {
+                    const key = `${comp.id}:${i}`;
+                    keyToIdx.set(key, termKeys.length);
+                    termKeys.push({ key, compId: comp.id, termIdx: i });
+                });
+            });
+            const parent = Array.from({ length: termKeys.length }, (_, i) => i);
+
+            function find(u) {
+                while (parent[u] !== u) { parent[u] = parent[parent[u]];
+                    u = parent[u]; }
+                return u;
+            }
+
+            function union(u, v) { const ru = find(u),
+                    rv = find(v); if (ru !== rv) parent[ru] = rv; }
+            // Union terminals connected by wires
+            wires.forEach(w => {
+                const k1 = `${w.compId1}:${w.termIdx1}`;
+                const k2 = `${w.compId2}:${w.termIdx2}`;
+                if (keyToIdx.has(k1) && keyToIdx.has(k2)) {
+                    union(keyToIdx.get(k1), keyToIdx.get(k2));
+                }
+            });
+            // Find ground node
+            let groundRoot = -1;
+            components.forEach(comp => {
+                if (comp.typeKey === 'ground') {
+                    const k = `${comp.id}:0`;
+                    if (keyToIdx.has(k)) groundRoot = find(keyToIdx.get(k));
+                }
+            });
+            // Assign node numbers (0 = ground)
+            const rootToNode = new Map();
+            let nodeCount = 0;
+            if (groundRoot >= 0) {
+                rootToNode.set(groundRoot, 0);
+                nodeCount = 1;
+            }
+            const termNode = new Array(termKeys.length).fill(-1);
+            for (let i = 0; i < termKeys.length; i++) {
+                const r = find(i);
+                if (!rootToNode.has(r)) {
+                    rootToNode.set(r, nodeCount++);
+                }
+                termNode[i] = rootToNode.get(r);
+            }
+            if (nodeCount <= 1) return { nodeVoltages: new Map(),
+                nodeMap: new Map(),
+                branchCurrents: new Map(),
+                nodeCount: 1 };
+            // Count voltage sources
+            const vSources = [];
+            const resistors = [];
+            components.forEach((comp, idx) => {
+                if (comp.typeKey === 'dc_voltage' || comp.typeKey === 'battery_9v') {
+                    if (comp.def.terminals.length >= 2) {
+                        const t0 = termNode[keyToIdx.get(`${comp.id}:0`)];
+                        const t1 = termNode[keyToIdx.get(`${comp.id}:1`)];
+                        vSources.push({ compId: comp.id, nPos: t0, nNeg: t1, voltage: comp.props.voltage ||
+                                5 });
+                    }
+                } else if (comp.typeKey === 'resistor' || comp.typeKey === 'potentiometer') {
+                    if (comp.def.terminals.length >= 2) {
+                        const t0 = termNode[keyToIdx.get(`${comp.id}:0`)];
+                        const t1 = termNode[keyToIdx.get(`${comp.id}:1`)];
+                        const r = comp.props.resistance || 1000;
+                        if (r > 0.001 && t0 !== t1) resistors.push({ compId: comp.id, nA: t0, nB: t1,
+                            resistance: r });
+                    }
+                } else if (comp.typeKey === 'switch_spst' && comp.props.state === 'closed') {
+                    const t0 = termNode[keyToIdx.get(`${comp.id}:0`)];
+                    const t1 = termNode[keyToIdx.get(`${comp.id}:1`)];
+                    if (t0 !== t1) resistors.push({ compId: comp.id, nA: t0, nB: t1, resistance: 0.001 });
+                } else if (comp.typeKey === 'ammeter') {
+                    const t0 = termNode[keyToIdx.get(`${comp.id}:0`)];
+                    const t1 = termNode[keyToIdx.get(`${comp.id}:1`)];
+                    if (t0 !== t1) resistors.push({ compId: comp.id, nA: t0, nB: t1, resistance: 0.001 });
+                } else if (comp.typeKey === 'fuse') {
+                    const t0 = termNode[keyToIdx.get(`${comp.id}:0`)];
+                    const t1 = termNode[keyToIdx.get(`${comp.id}:1`)];
+                    if (t0 !== t1) resistors.push({ compId: comp.id, nA: t0, nB: t1, resistance: 0.001 });
+                }
+            });
+            const nv = vSources.length;
+            const N = nodeCount + nv;
+            const matrix = Array.from({ length: N }, () => new Array(N + 1).fill(0));
+            // Conductance matrix
+            resistors.forEach(r => {
+                const g = 1 / r.resistance;
+                matrix[r.nA][r.nA] += g;
+                matrix[r.nB][r.nB] += g;
+                matrix[r.nA][r.nB] -= g;
+                matrix[r.nB][r.nA] -= g;
+            });
+            // Voltage sources (MNA)
+            vSources.forEach((vs, idx) => {
+                const row = nodeCount + idx;
+                matrix[vs.nPos][row] += 1;
+                matrix[row][vs.nPos] += 1;
+                matrix[vs.nNeg][row] -= 1;
+                matrix[row][vs.nNeg] -= 1;
+                matrix[row][N] = vs.voltage;
+            });
+            // Ground constraint
+            if (groundRoot >= 0) {
+                const gndNode = rootToNode.get(groundRoot);
+                for (let j = 0; j <= N; j++) matrix[gndNode][j] = 0;
+                matrix[gndNode][gndNode] = 1;
+                matrix[gndNode][N] = 0;
+            }
+            // Gaussian elimination
+            for (let col = 0; col < N; col++) {
+                let maxRow = col;
+                for (let row = col + 1; row < N; row++) {
+                    if (Math.abs(matrix[row][col]) > Math.abs(matrix[maxRow][col])) maxRow = row;
+                }
+                if (Math.abs(matrix[maxRow][col]) < 1e-12) continue;
+                [matrix[col], matrix[maxRow]] = [matrix[maxRow], matrix[col]];
+                for (let row = col + 1; row < N; row++) {
+                    const factor = matrix[row][col] / matrix[col][col];
+                    for (let j = col; j <= N; j++) matrix[row][j] -= factor * matrix[col][j];
+                }
+            }
+            const solution = new Array(N).fill(0);
+            for (let i = N - 1; i >= 0; i--) {
+                let sum = matrix[i][N];
+                for (let j = i + 1; j < N; j++) sum -= matrix[i][j] * solution[j];
+                solution[i] = Math.abs(matrix[i][i]) > 1e-12 ? sum / matrix[i][i] : 0;
+            }
+            const nodeVoltages = new Map();
+            for (let i = 0; i < nodeCount; i++) nodeVoltages.set(i, solution[i]);
+            // Build nodeMap
+            const nodeMap = new Map();
+            termKeys.forEach((tk, i) => {
+                nodeMap.set(tk.key, termNode[i]);
+            });
+            // Branch currents
+            const branchCurrents = new Map();
+            resistors.forEach(r => {
+                const vA = nodeVoltages.get(r.nA) || 0;
+                const vB = nodeVoltages.get(r.nB) || 0;
+                branchCurrents.set(r.compId, (vA - vB) / r.resistance);
+            });
+            vSources.forEach((vs, idx) => {
+                branchCurrents.set(vs.compId, solution[nodeCount + idx] || 0);
+            });
+            return { nodeVoltages, nodeMap, branchCurrents, nodeCount };
+        }
+
+        function runSimulation() {
+            simulationResults = buildAndSolve();
+            updateStatus();
+            drawAll();
+            if (simulationResults) {
+                document.getElementById('simResult').textContent =
+                    `✅ Sim: ${simulationResults.nodeCount} nodes, ${simulationResults.nodeVoltages.size} solved`;
+                document.getElementById('statusDot').className = 'dot green';
+                document.getElementById('statusText').textContent = 'Simulation complete - Results displayed';
+            } else {
+                document.getElementById('simResult').textContent = '⚠ No circuit to simulate';
+                document.getElementById('statusDot').className = 'dot yellow';
+                document.getElementById('statusText').textContent = 'Add components and wires, then run simulation';
+            }
+        }
+
+        function resetSimulation() {
+            simulationResults = null;
+            document.getElementById('simResult').textContent = '';
+            document.getElementById('statusDot').className = 'dot green';
+            document.getElementById('statusText').textContent = 'Ready - Drag components onto the canvas';
+            updateStatus();
+            drawAll();
+        }
+
+        // ==================== CANVAS & RENDERING ====================
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            W = rect.width;
+            H = rect.height;
+            canvas.width = W * window.devicePixelRatio;
+            canvas.height = H * window.devicePixelRatio;
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            offsetX = W / 2;
+            offsetY = H / 2;
+        }
+
+        function toCanvas(sx, sy) {
+            return { x: (sx - offsetX) / scale, y: (sy - offsetY) / scale };
+        }
+
+        function toScreen(cx, cy) {
+            return { x: cx * scale + offsetX, y: cy * scale + offsetY };
+        }
+
+        function drawGrid() {
+            if (!showGrid) return;
+            ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+            ctx.lineWidth = 0.5;
+            const gs = gridSize;
+            const startX = -offsetX / scale;
+            const startY = -offsetY / scale;
+            const endX = startX + W / scale;
+            const endY = startY + H / scale;
+            const sx = Math.floor(startX / gs) * gs;
+            const sy = Math.floor(startY / gs) * gs;
+            for (let x = sx; x <= endX; x += gs) {
+                const sx2 = x * scale + offsetX;
+                ctx.beginPath();
+                ctx.moveTo(sx2, 0);
+                ctx.lineTo(sx2, H);
+                ctx.stroke();
+            }
+            for (let y = sy; y <= endY; y += gs) {
+                const sy2 = y * scale + offsetY;
+                ctx.beginPath();
+                ctx.moveTo(0, sy2);
+                ctx.lineTo(W, sy2);
+                ctx.stroke();
+            }
+        }
+
+        function drawAll() {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#181b21';
+            ctx.fillRect(0, 0, W, H);
+            drawGrid();
+            // Draw wires
+            wires.forEach(w => w.draw());
+            // Draw wire in progress
+            if (wireStart) {
+                const c1 = findCompById(wireStart.compId);
+                if (c1) {
+                    const tp = c1.getTerminalWorldPos(wireStart.termIdx);
+                    const mouse = toCanvas(mouseX, mouseY);
+                    ctx.strokeStyle = '#ffd700';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(tp.x, tp.y);
+                    ctx.lineTo(mouse.x, mouse.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(mouse.x, mouse.y, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            // Draw components
+            components.forEach(comp => comp.draw());
+            // Draw hovered terminal highlight
+            if (hoveredTerminal && !wireStart) {
+                const comp = findCompById(hoveredTerminal.compId);
+                if (comp) {
+                    const tp = comp.getTerminalWorldPos(hoveredTerminal.termIdx);
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.arc(tp.x, tp.y, 10, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+        }
+
+        // ==================== EVENT HANDLERS ====================
+        function getCanvasPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        }
+
+        function findTerminalAtScreen(sx, sy) {
+            const cp = toCanvas(sx, sy);
+            for (const comp of components) {
+                const termIdx = comp.getTerminalAt(cp.x, cp.y, 10 / scale);
+                if (termIdx >= 0) return { compId: comp.id, termIdx, cx: comp.x, cy: comp.y, tdx: comp.def
+                        .terminals[termIdx].dx, tdy: comp.def.terminals[termIdx].dy };
+            }
+            return null;
+        }
+
+        function findComponentAtScreen(sx, sy) {
+            const cp = toCanvas(sx, sy);
+            for (let i = components.length - 1; i >= 0; i--) {
+                if (components[i].containsPoint(cp.x, cp.y)) return components[i];
+            }
+            return null;
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getCanvasPos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+            const cp = toCanvas(pos.x, pos.y);
+
+            if (e.button === 1 || (e.button === 0 && e.altKey)) {
+                isPanning = true;
+                panStart = { x: pos.x, y: pos.y };
+                return;
+            }
+            if (e.button === 2) {
+                const comp = findComponentAtScreen(pos.x, pos.y);
+                if (comp) {
+                    selectedCompId = comp.id;
+                    showContextMenu(e.clientX, e.clientY, comp);
+                }
+                return;
+            }
+            if (e.button === 0) {
+                if (currentMode === 'delete') {
+                    const comp = findComponentAtScreen(pos.x, pos.y);
+                    if (comp) {
+                        deleteComponent(comp.id);
+                        drawAll();
+                        updateStatus();
+                        return;
+                    }
+                    const wire = findWireAtScreen(pos.x, pos.y);
+                    if (wire) {
+                        wires = wires.filter(w => w.id !== wire.id);
+                        drawAll();
+                        updateStatus();
+                        return;
+                    }
+                    return;
+                }
+                if (currentMode === 'wire') {
+                    const ht = findTerminalAtScreen(pos.x, pos.y);
+                    if (ht) {
+                        wireStart = { compId: ht.compId, termIdx: ht.termIdx };
+                        drawAll();
+                    }
+                    return;
+                }
+                // Select mode
+                const ht = findTerminalAtScreen(pos.x, pos.y);
+                if (ht) {
+                    wireStart = { compId: ht.compId, termIdx: ht.termIdx };
+                    selectedCompId = null;
+                    drawAll();
+                    return;
+                }
+                const comp = findComponentAtScreen(pos.x, pos.y);
+                if (comp) {
+                    selectedCompId = comp.id;
+                    dragData = { compId: comp.id, startX: comp.x, startY: comp.y, mouseStartX: cp.x,
+                        mouseStartY: cp.y };
+                    drawAll();
+                    updateInfoPanel(comp);
+                    return;
+                }
+                selectedCompId = null;
+                wireStart = null;
+                infoPanel.classList.remove('visible');
+                drawAll();
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const pos = getCanvasPos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+            const cp = toCanvas(pos.x, pos.y);
+
+            if (isPanning) {
+                offsetX += pos.x - panStart.x;
+                offsetY += pos.y - panStart.y;
+                panStart = { x: pos.x, y: pos.y };
+                drawAll();
+                return;
+            }
+            if (dragData) {
+                const comp = findCompById(dragData.compId);
+                if (comp) {
+                    comp.x = dragData.startX + (cp.x - dragData.mouseStartX);
+                    comp.y = dragData.startY + (cp.y - dragData.mouseStartY);
+                    // Snap to grid
+                    if (showGrid) {
+                        comp.x = Math.round(comp.x / gridSize) * gridSize;
+                        comp.y = Math.round(comp.y / gridSize) * gridSize;
+                    }
+                    drawAll();
+                }
+                return;
+            }
+            if (wireStart) {
+                drawAll();
+                return;
+            }
+            // Update hover
+            const ht = findTerminalAtScreen(pos.x, pos.y);
+            const prevHovered = hoveredTerminal;
+            hoveredTerminal = ht;
+            if (JSON.stringify(prevHovered) !== JSON.stringify(hoveredTerminal)) {
+                drawAll();
+                if (hoveredTerminal && currentMode === 'select') {
+                    canvas.style.cursor = 'pointer';
+                } else if (currentMode === 'wire') {
+                    canvas.style.cursor = 'crosshair';
+                } else if (currentMode === 'delete') {
+                    canvas.style.cursor = 'not-allowed';
+                } else {
+                    canvas.style.cursor = 'crosshair';
+                }
+            }
+            // Update info panel for hovered component
+            if (!dragData && !wireStart && currentMode === 'select') {
+                const comp = findComponentAtScreen(pos.x, pos.y);
+                if (comp && comp.id !== selectedCompId) {
+                    updateInfoPanel(comp);
+                } else if (!comp && !selectedCompId) {
+                    infoPanel.classList.remove('visible');
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            const pos = getCanvasPos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+            if (isPanning) {
+                isPanning = false;
+                return;
+            }
+            if (dragData) {
+                dragData = null;
+                drawAll();
+                updateStatus();
+                return;
+            }
+            if (wireStart && currentMode === 'wire') {
+                const ht = findTerminalAtScreen(pos.x, pos.y);
+                if (ht && (ht.compId !== wireStart.compId || ht.termIdx !== wireStart.termIdx)) {
+                    // Check if wire already exists
+                    const exists = wires.some(w =>
+                        (w.compId1 === wireStart.compId && w.termIdx1 === wireStart.termIdx &&
+                            w.compId2 === ht.compId && w.termIdx2 === ht.termIdx) ||
+                        (w.compId1 === ht.compId && w.termIdx1 === ht.termIdx &&
+                            w.compId2 === wireStart.compId && w.termIdx2 === wireStart.termIdx)
+                    );
+                    if (!exists) {
+                        wires.push(new Wire(wireStart.compId, wireStart.termIdx, ht.compId, ht.termIdx));
+                        resetSimulation();
+                    }
+                }
+                wireStart = null;
+                drawAll();
+                updateStatus();
+                return;
+            }
+            if (wireStart && currentMode === 'select') {
+                const ht = findTerminalAtScreen(pos.x, pos.y);
+                if (ht && (ht.compId !== wireStart.compId || ht.termIdx !== wireStart.termIdx)) {
+                    const exists = wires.some(w =>
+                        (w.compId1 === wireStart.compId && w.termIdx1 === wireStart.termIdx &&
+                            w.compId2 === ht.compId && w.termIdx2 === ht.termIdx) ||
+                        (w.compId1 === ht.compId && w.termIdx1 === ht.termIdx &&
+                            w.compId2 === wireStart.compId && w.termIdx2 === wireStart.termIdx)
+                    );
+                    if (!exists) {
+                        wires.push(new Wire(wireStart.compId, wireStart.termIdx, ht.compId, ht.termIdx));
+                        resetSimulation();
+                    }
+                }
+                wireStart = null;
+                drawAll();
+                updateStatus();
+            }
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            const pos = getCanvasPos(e);
+            const cp = toCanvas(pos.x, pos.y);
+            scale *= zoomFactor;
+            scale = Math.max(0.2, Math.min(5, scale));
+            offsetX = pos.x - cp.x * scale;
+            offsetY = pos.y - cp.y * scale;
+            drawAll();
+        });
+
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        function findWireAtScreen(sx, sy) {
+            const cp = toCanvas(sx, sy);
+            const threshold = 8 / scale;
+            for (const w of wires) {
+                const eps = w.getEndpoints();
+                if (!eps) continue;
+                const midX = (eps.p1.x + eps.p2.x) / 2;
+                const seg1dist = pointToSegmentDist(cp.x, cp.y, eps.p1.x, eps.p1.y, midX, eps.p1.y);
+                const seg2dist = pointToSegmentDist(cp.x, cp.y, midX, eps.p1.y, midX, eps.p2.y);
+                const seg3dist = pointToSegmentDist(cp.x, cp.y, midX, eps.p2.y, eps.p2.x, eps.p2.y);
+                if (Math.min(seg1dist, seg2dist, seg3dist) < threshold) return w;
+            }
+            return null;
+        }
+
+        function pointToSegmentDist(px, py, x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+            let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+            t = Math.max(0, Math.min(1, t));
+            return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+        }
+
+        function showContextMenu(x, y, comp) {
+            const existing = document.querySelector('.context-menu');
+            if (existing) existing.remove();
+            const menu = document.createElement('div');
+            menu.className = 'context-menu';
+            menu.style.cssText = `
+            position:fixed;left:${x}px;top:${y}px;background:#2c313a;border:1px solid #444;
+            border-radius:8px;padding:4px 0;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,0.5);
+            min-width:160px;font-size:0.8rem;
+          `;
+            const items = [
+                { label: '↻ Rotate 90°', action: () => { comp.rotation += Math.PI / 2;
+                        drawAll(); } },
+                { label: '📋 Duplicate', action: () => { duplicateComponent(comp);
+                        drawAll(); } },
+                { label: '🔌 Toggle Switch', action: () => { if (comp.typeKey === 'switch_spst') { comp.props
+                            .state = comp.props.state === 'open' ? 'closed' : 'open';
+                        resetSimulation();
+                        drawAll(); } } },
+                { label: '🗑 Delete', action: () => { deleteComponent(comp.id);
+                        drawAll();
+                        updateStatus(); } },
+                { label: '📊 Properties', action: () => { updateInfoPanel(comp);
+                        infoPanel.classList.add('visible'); } },
+            ];
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.textContent = item.label;
+                el.style.cssText =
+                    'padding:8px 14px;cursor:pointer;transition:0.1s;color:#d4d4d4;';
+                el.onmouseenter = () => el.style.background = '#3a404a';
+                el.onmouseleave = () => el.style.background = 'transparent';
+                el.onclick = () => { item.action();
+                    menu.remove(); };
+                menu.appendChild(el);
+            });
+            document.body.appendChild(menu);
+            const closeMenu = (ev) => {
+                if (!menu.contains(ev.target)) { menu.remove();
+                    document.removeEventListener('click', closeMenu); }
+            };
+            setTimeout(() => document.addEventListener('click', closeMenu), 50);
+        }
+
+        function deleteComponent(compId) {
+            components = components.filter(c => c.id !== compId);
+            wires = wires.filter(w => w.compId1 !== compId && w.compId2 !== compId);
+            if (selectedCompId === compId) selectedCompId = null;
+            resetSimulation();
+            infoPanel.classList.remove('visible');
+        }
+
+        function duplicateComponent(comp) {
+            const newComp = new PlacedComponent(comp.typeKey, comp.x + 30, comp.y + 30, comp.rotation);
+            newComp.props = { ...comp.props };
+            components.push(newComp);
+            resetSimulation();
+            updateStatus();
+        }
+
+        function updateInfoPanel(comp) {
+            if (!comp) { infoPanel.classList.remove('visible'); return; }
+            infoTitle.textContent = comp.def.name + ' (ID:' + comp.id + ')';
+            let html = '';
+            for (const [key, val] of Object.entries(comp.props)) {
+                if (key === 'unit') continue;
+                html +=
+                    `<div class="info-row"><span>${key}:</span><span class="info-val">${val} ${comp.props.unit||''}</span></div>`;
+            }
+            html +=
+                `<div class="info-row"><span>Rotation:</span><span class="info-val">${Math.round(comp.rotation*180/Math.PI)}°</span></div>`;
+            html +=
+            `<div class="info-row"><span>Terminals:</span><span class="info-val">${comp.def.terminals.length}</span></div>`;
+            if (simulationResults && simulationResults.branchCurrents) {
+                const current = simulationResults.branchCurrents.get(comp.id);
+                if (current !== undefined) {
+                    html +=
+                        `<div class="info-row"><span>Current:</span><span class="info-val">${(current*1000).toFixed(2)} mA</span></div>`;
+                }
+                const nodeMap = simulationResults.nodeMap;
+                const nodeVoltages = simulationResults.nodeVoltages;
+                if (nodeMap && nodeVoltages && comp.def.terminals.length > 0) {
+                    const key0 = `${comp.id}:0`;
+                    const n0 = nodeMap.get(key0);
+                    if (n0 !== undefined) {
+                        html +=
+                            `<div class="info-row"><span>Voltage T0:</span><span class="info-val">${(nodeVoltages.get(n0)||0).toFixed(3)} V</span></div>`;
+                    }
+                }
+            }
+            infoContent.innerHTML = html;
+            infoPanel.classList.add('visible');
+        }
+
+        function updateStatus() {
+            document.getElementById('compCount').textContent = components.length;
+            document.getElementById('wireCount').textContent = wires.length;
+            const nodeSet = new Set();
+            wires.forEach(w => {
+                nodeSet.add(`${w.compId1}:${w.termIdx1}`);
+                nodeSet.add(`${w.compId2}:${w.termIdx2}`);
+            });
+            document.getElementById('nodeCount').textContent = nodeSet.size;
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeSelect').classList.toggle('active', mode === 'select');
+            document.getElementById('modeWire').classList.toggle('active', mode === 'wire');
+            document.getElementById('modeDelete').classList.toggle('active', mode === 'delete');
+            wireStart = null;
+            dragData = null;
+            if (mode === 'wire') canvas.style.cursor = 'crosshair';
+            else if (mode === 'delete') canvas.style.cursor = 'not-allowed';
+            else canvas.style.cursor = 'crosshair';
+            drawAll();
+        }
+
+        function rotateSelected() {
+            if (selectedCompId) {
+                const comp = findCompById(selectedCompId);
+                if (comp) { comp.rotation += Math.PI / 2;
+                    resetSimulation();
+                    drawAll(); }
+            }
+        }
+
+        function duplicateSelected() {
+            if (selectedCompId) {
+                const comp = findCompById(selectedCompId);
+                if (comp) { duplicateComponent(comp);
+                    drawAll(); }
+            }
+        }
+
+        function toggleGrid() {
+            showGrid = !showGrid;
+            document.getElementById('gridOn').textContent = showGrid ? '📐 ON' : '📐 OFF';
+            document.getElementById('gridOn').classList.toggle('active', showGrid);
+            drawAll();
+        }
+
+        function clearAll() {
+            if (components.length > 0 && !confirm('Clear all components and wires?')) return;
+            components = [];
+            wires = [];
+            selectedCompId = null;
+            wireStart = null;
+            dragData = null;
+            simulationResults = null;
+            infoPanel.classList.remove('visible');
+            document.getElementById('simResult').textContent = '';
+            document.getElementById('statusDot').className = 'dot green';
+            document.getElementById('statusText').textContent = 'Canvas cleared - Ready';
+            updateStatus();
+            drawAll();
+        }
+
+        // ==================== DRAG FROM SIDEBAR ====================
+        function initSidebar() {
+            const categories = {};
+            for (const [key, def] of Object.entries(componentDefs)) {
+                if (!categories[def.category]) categories[def.category] = [];
+                categories[def.category].push({ key, ...def });
+            }
+            const catNames = {
+                'passive': '📦 Passive Components',
+                'sources': '⚡ Sources & Ground',
+                'semiconductor': '🔬 Semiconductors',
+                'switches': '🔘 Switches',
+                'meters': '📏 Meters',
+                'output': '💡 Output Devices',
+                'ic': '🧩 Integrated Circuits',
+                'logic': '🔢 Logic Gates',
+                'connectors': '🔗 Connectors',
+            };
+            const container = document.getElementById('componentCategories');
+            container.innerHTML = '';
+            for (const [cat, items] of Object.entries(categories)) {
+                const catDiv = document.createElement('div');
+                catDiv.className = 'category';
+                catDiv.innerHTML = `
+              <div class="category-title">${catNames[cat]||cat} <span class="arrow">▼</span></div>
+              <div class="components-grid"></div>
+            `;
+                const grid = catDiv.querySelector('.components-grid');
+                items.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'component-card';
+                    card.innerHTML = `<span class="comp-icon">${item.icon}</span><span class="comp-label">${item.name}</span>`;
+                    card.draggable = true;
+                    card.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', item.key);
+                        e.dataTransfer.effectAllowed = 'copy';
+                    });
+                    grid.appendChild(card);
+                });
+                catDiv.querySelector('.category-title').addEventListener('click', () => {
+                    catDiv.classList.toggle('collapsed');
+                });
+                container.appendChild(catDiv);
+            }
+        }
+
+        // Handle drop on canvas
+        container.addEventListener('dragover', (e) => { e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy'; });
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const typeKey = e.dataTransfer.getData('text/plain');
+            if (!componentDefs[typeKey]) return;
+            const rect = canvas.getBoundingClientRect();
+            const sx = e.clientX - rect.left;
+            const sy = e.clientY - rect.top;
+            const cp = toCanvas(sx, sy);
+            let x = cp.x;
+            let y = cp.y;
+            if (showGrid) {
+                x = Math.round(x / gridSize) * gridSize;
+                y = Math.round(y / gridSize) * gridSize;
+            }
+            const comp = new PlacedComponent(typeKey, x, y, 0);
+            components.push(comp);
+            selectedCompId = comp.id;
+            resetSimulation();
+            updateStatus();
+            drawAll();
+            updateInfoPanel(comp);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (selectedCompId) {
+                    deleteComponent(selectedCompId);
+                    drawAll();
+                    updateStatus();
+                }
+            }
+            if (e.key === 'r' || e.key === 'R') rotateSelected();
+            if (e.key === 'Escape') {
+                wireStart = null;
+                dragData = null;
+                selectedCompId = null;
+                infoPanel.classList.remove('visible');
+                drawAll();
+            }
+            if (e.key === 's' || e.key === 'S') {
+                if (e.ctrlKey || e.metaKey) {
+                    e.preventDefault();
+                    runSimulation();
+                }
+            }
+            if (e.key === '1') setMode('select');
+            if (e.key === '2') setMode('wire');
+            if (e.key === '3') setMode('delete');
+        });
+
+        // ==================== INIT ====================
+        function init() {
+            resizeCanvas();
+            initSidebar();
+            drawAll();
+            updateStatus();
+            // Add some demo components
+            const batt = new PlacedComponent('dc_voltage', -150, 0, 0);
+            batt.props.voltage = 9;
+            const r1 = new PlacedComponent('resistor', -40, 0, 0);
+            r1.props.resistance = 1000;
+            const led = new PlacedComponent('led', 70, 0, 0);
+            const sw = new PlacedComponent('switch_spst', -40, -80, 0);
+            sw.props.state = 'open';
+            const gnd = new PlacedComponent('ground', 70, 60, 0);
+            components.push(batt, r1, led, sw, gnd);
+            wires.push(new Wire(batt.id, 1, r1.id, 0));
+            wires.push(new Wire(r1.id, 1, led.id, 0));
+            wires.push(new Wire(led.id, 1, gnd.id, 0));
+            wires.push(new Wire(batt.id, 0, sw.id, 0));
+            wires.push(new Wire(sw.id, 1, gnd.id, 0));
+            selectedCompId = null;
+            updateStatus();
+            drawAll();
+            document.getElementById('statusText').textContent =
+                'Demo circuit loaded - Press "S" or click "Run Simulation" to analyze';
+        }
+
+        window.addEventListener('resize', () => { resizeCanvas();
+            drawAll(); });
+        init();
+
+        // Expose to global scope for button onclick
+        window.runSimulation = runSimulation;
+        window.resetSimulation = resetSimulation;
+        window.clearAll = clearAll;
+        window.setMode = setMode;
+        window.rotateSelected = rotateSelected;
+        window.duplicateSelected = duplicateSelected;
+        window.toggleGrid = toggleGrid;
+
+        console.log('⚡ Advanced Circuit Simulator Ready');
+        console.log('  🖱 Drag components from sidebar | 🔗 Click terminals to wire');
+        console.log('  ⌨ Shortcuts: 1=Select 2=Wire 3=Delete R=Rotate Del=Remove S=Simulate');
+        console.log('  📐 Scroll to zoom | Alt+drag to pan | Right-click for menu');
+        console.log('  Components:', Object.keys(componentDefs).length, 'types available');
+    </script>
+</body>
+</html>
